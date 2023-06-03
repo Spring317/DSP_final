@@ -1,6 +1,5 @@
 from tkinter import *
 import math
-import os
 from Note_detection import note_detection
 
 class GUI:
