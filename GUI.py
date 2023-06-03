@@ -8,6 +8,9 @@ class GUI:
         self.__root.geometry('1920x1080')
         self.__root.attributes('-fullscreen', True)
         self.__root.resizable(width= False, height= False)    
+      
+    def create_background_4_normal_mode(self):
+        self.__root.title('Normal mode')
         
         self.__isClicked = False
         
@@ -32,9 +35,6 @@ class GUI:
                       PhotoImage(file= clicked_dirs[3]),
                       PhotoImage(file= clicked_dirs[4]),
                       PhotoImage(file= clicked_dirs[5]))
-      
-    def create_background_4_normal_mode(self):
-        self.__root.title('Normal mode')
         
         self.__frame = Canvas(self.__root, 
                        width= 1920, 
