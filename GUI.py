@@ -13,7 +13,10 @@ class GUI:
 
     def animate_bar_thread(self, target):
         Thread(target= lambda: self.animate_bar(target)).start()
-        
+        Thread(target= lambda: self.animate_bar(target)).start()
+        Thread(target= lambda: self.animate_bar(target)).start()
+        Thread(target= lambda: self.animate_bar(target)).start()
+
     def animate_bar(self, target):
             if self.__angle == target:
                 return
