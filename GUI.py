@@ -1,3 +1,5 @@
+from threading import Thread
+
 from tkinter import PhotoImage, Canvas, Tk, NW
 from math import sin, cos, radians
 from Note_detection import note_detection
@@ -8,7 +10,28 @@ class GUI:
         self.__root.geometry('1920x1080')
         self.__root.attributes('-fullscreen', True)
         self.__root.resizable(width= False, height= False)    
-      
+
+    def animate_bar_thread(self, target):
+        Thread(target= lambda: self.animate_bar(target)).start()
+        
+    def animate_bar(self, target):
+            if self.__angle == target:
+                return
+            elif self.__angle < target:    
+                self.__angle += 1   
+                x2 = self.__center_x + cos(radians(self.__angle)) * self.__bar_length
+                y2 = self.__center_y - sin(radians(self.__angle)) * self.__bar_length
+                
+                self.__speedometor_frame.coords(self.__bar, self.__center_x, self.__center_y, x2, y2)
+                self.__root.after(1, lambda: self.animate_bar(target))
+            else:
+                self.__angle -= 1
+                x2 = self.__center_x + cos(radians(self.__angle)) * self.__bar_length
+                y2 = self.__center_y - sin(radians(self.__angle)) * self.__bar_length
+                
+                self.__speedometor_frame.coords(self.__bar, self.__center_x, self.__center_y, x2, y2)
+                self.__root.after(1, lambda: self.animate_bar(target))
+    
     def create_background_4_normal_mode(self):
         self.__root.title('Normal mode')
         
@@ -97,6 +120,7 @@ class GUI:
                                                          anchor= NW, 
                                                          image= self.__speedometer)
      
+     
     def normal_mode(self):       
                                 
         Note = [82.41, 110, 146.83, 196, 246.94, 329.63]
@@ -116,9 +140,9 @@ class GUI:
             # print(self.__differenceFreq, target)
             
             if self.__differenceFreq >= 0:
-                animate_bar(target)
+                self.animate_bar_thread(target)
             else:
-                animate_bar(target)
+                self.animate_bar_thread(target)
                        
         def E2_enter(event):
             if not self.__isClicked:
@@ -158,8 +182,8 @@ class GUI:
         
         def Leave(event):
             if not self.__isClicked:
-                self.__speedometor_frame.itemconfig(self.__speedometer_pic, image= self.__sppedometer)
-                self.__speedometor_frame.image = self.__sppedometer
+                self.__speedometor_frame.itemconfig(self.__speedometer_pic, image= self.__speedometer)
+                self.__speedometor_frame.image = self.__speedometer
          
                     
         def E2_click(event):
@@ -207,7 +231,7 @@ class GUI:
         def Unclick(event):
             if self.__isClicked:
                 self.__isClicked = False
-                animate_bar(90)
+                self.animate_bar_thread(90)
         
         rect1 = self.__speedometor_frame.create_rectangle(73, 478, 73+204, 478+240, fill= '', outline= '')
         rect2 = self.__speedometor_frame.create_rectangle(212, 257, 212+242, 257+167, fill= '', outline= '')
@@ -244,39 +268,19 @@ class GUI:
         self.__speedometor_frame.tag_bind(rect4, '<Button-1>', G3_click)
         self.__speedometor_frame.tag_bind(rect5, '<Button-1>', B3_click)
         self.__speedometor_frame.tag_bind(rect6, '<Button-1>', E4_click)
-    
-        def animate_bar(target):
-            
-            if self.__angle == target:
-                return
-            elif self.__angle < target:    
-                self.__angle += 1   
-                x2 = center_x + cos(radians(self.__angle)) * bar_length
-                y2 = center_y - sin(radians(self.__angle)) * bar_length
-                
-                self.__speedometor_frame.coords(bar, center_x, center_y, x2, y2)
-                self.__root.after(1, lambda: animate_bar(target))
-            else:
-                self.__angle -= 1
-                x2 = center_x + cos(radians(self.__angle)) * bar_length
-                y2 = center_y - sin(radians(self.__angle)) * bar_length
-                
-                self.__speedometor_frame.coords(bar, center_x, center_y, x2, y2)
-                self.__root.after(1, lambda: animate_bar(target))
-        
 
-        center_x = 735
-        center_y = 735
+        self.__center_x = 735
+        self.__center_y = 735
 
-        bar_length = 380
+        self.__bar_length = 380
 
         self.__angle = 90
         
-        initial_x = center_x + cos(radians(self.__angle)) * bar_length
-        initial_y = center_y - sin(radians(self.__angle)) * bar_length
+        initial_x = self.__center_x + cos(radians(self.__angle)) * self.__bar_length
+        initial_y = self.__center_y - sin(radians(self.__angle)) * self.__bar_length
 
-        bar = self.__speedometor_frame.create_line(center_x, 
-                                            center_y, 
+        self.__bar = self.__speedometor_frame.create_line(self.__center_x, 
+                                            self.__center_y, 
                                             initial_x, 
                                             initial_y, 
                                             width=10, 
@@ -285,5 +289,9 @@ class GUI:
         self.__root.mainloop()
         
 run = GUI()
-run.create_background_4_normal_mode()
-run.normal_mode()
+
+thread1 = Thread(target= run.create_background_4_normal_mode())
+thread2 = Thread(target= run.normal_mode())
+
+thread1.start()
+thread2.start()
