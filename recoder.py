@@ -9,7 +9,7 @@ CHUNK = 1024 * 2             # samples per frame
 FORMAT = pyaudio.paInt16     # audio format (bytes per sample?)
 CHANNELS = 1                 # single channel for microphone
 RATE = 44100                 # samples per second
-record_seconds = 5
+record_seconds = 2
 # initialize PyAudio object
 p = pyaudio.PyAudio()
 # open stream object as input & output
