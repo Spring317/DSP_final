@@ -1,23 +1,46 @@
 import tkinter as tk
+import math
 
 def animate_bar():
-    canvas.move(bar, 3, 0)  # Move the bar 3 pixels to the right
-    if canvas.coords(bar)[2] < WIDTH:
-        root.after(50, animate_bar)  # Repeat the animation after 50 milliseconds
+    global angle
+    angle -= 0.5  # Increment the angle by 1 degree
+
+    # Calculate the coordinates of the moving endpoint of the bar
+    x2 = center_x + math.cos(math.radians(angle)) * bar_length
+    y2 = center_y - math.sin(math.radians(angle)) * bar_length
+    
+    # Update the coordinates of the bar
+    canvas.coords(bar, center_x, center_y, x2, y2)
+    
+    # Schedule the next animation frame
+    root.after(1, animate_bar)
 
 # Create the main window
 root = tk.Tk()
-root.title("Running Bar Animation")
+root.title("Animated Bar Example")
 
-# Set the dimensions of the canvas
-WIDTH, HEIGHT = 400, 100
-canvas = tk.Canvas(root, width=WIDTH, height=HEIGHT)
+# Create the canvas
+canvas_width = 400
+canvas_height = 400
+canvas = tk.Canvas(root, width=canvas_width, height=canvas_height)
 canvas.pack()
 
-# Create the running bar
-bar_width = 100
-bar_height = 20
-bar = canvas.create_rectangle(0, 0, bar_width, bar_height, fill="blue")
+# Set the center of the canvas
+center_x = canvas_width // 2
+center_y = canvas_height // 2
+
+# Set the length of the bar
+bar_length = 150
+
+# Calculate the initial coordinates of the moving endpoint of the bar
+initial_x = center_x + math.cos(math.radians(90)) * bar_length
+initial_y = center_y - math.sin(math.radians(90)) * bar_length
+
+# Create the bar
+bar = canvas.create_line(center_x, center_y, initial_x, initial_y, width=3, fill="red")
+
+# Initialize the angle
+angle = 90
 
 # Start the animation
 animate_bar()

@@ -10,7 +10,7 @@ class Note_detection:
         return: audio, sample_rate
         
         ***"""
-        audio_file = 'sample1.wav'
+        audio_file = r'sample2.wav'
         audio, sample_rate = librosa.load(audio_file, sr=None)
         return audio, sample_rate
     

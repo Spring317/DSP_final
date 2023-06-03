@@ -8,7 +8,7 @@ class GUI:
         self.__root.resizable(width= False, height= False)    
         
     def normal_mode(self):
-        self.__root.title('normal mode')
+        self.__root.title('Normal mode')
         self.__root.geometry('1920x1080')
         
         background = PhotoImage(file= 'background.png')
@@ -26,46 +26,56 @@ class GUI:
         
         def chooseNode(node):
             self.__differenceFreq = Note_detection.tunning(node)
+            
+            target = self.__differenceFreq * 10 + 400
+            
+            if target > 820: 
+                target = 820
+            if target < 0: 
+                target = 20
+            
+            print(self.__differenceFreq, target)
+            
+            if self.__differenceFreq >= 0:
+                animate_bar(target)
+            else:
+                animate_bar(target)
                     
-        E2 = Button(frame, text= 'E2', command= lambda x: chooseNode(node[0]))
+        E2 = Button(frame, text= 'E2', command= lambda: chooseNode(node[0]))
         E2.place(x= 400, y= 550)
         
-        A2 = Button(frame, text= 'A2', command= lambda x: chooseNode(node[1]))
+        A2 = Button(frame, text= 'A2', command= lambda: chooseNode(node[1]))
         A2.place(x= 600, y= 550)
         
-        D3 = Button(frame, text= 'D3', command= lambda x: chooseNode(node[2]))
+        D3 = Button(frame, text= 'D3', command= lambda: chooseNode(node[2]))
         D3.place(x= 800, y= 550)
         
-        G3 = Button(frame, text= 'G3', command= lambda x: chooseNode(node[3]))
+        G3 = Button(frame, text= 'G3', command= lambda: chooseNode(node[3]))
         G3.place(x= 1000, y= 550)
         
-        B3 = Button(frame, text= 'B3', command= lambda x: chooseNode(node[4]))
+        B3 = Button(frame, text= 'B3', command= lambda: chooseNode(node[4]))
         B3.place(x= 1200, y= 550)
         
-        E4 = Button(frame, text= 'E4', command= lambda x: chooseNode(node[5]))
+        E4 = Button(frame, text= 'E4', command= lambda: chooseNode(node[5]))
         E4.place(x= 1400, y= 550)
         
         child_frame = Canvas(frame, width= 820, height= 100, bg= 'red')
         child_frame.place(x= 560, y= 650)
         
         def animate_bar(target):
-            if target > 400:            
+            
+            if child_frame.coords(bar)[2] == int(target):
+                return
+            if child_frame.coords(bar)[2] < target:            
                 child_frame.move(bar, 1, 0)
-                if child_frame.coords(bar)[2] < target:
-                    self.__root.after(1, lambda: animate_bar(target))
+                self.__root.after(1, lambda: animate_bar(target))
             else:
                 child_frame.move(bar, -1, 0)
-                if child_frame.coords(bar)[2] > target:
-                    self.__root.after(1, lambda: animate_bar(target))
+                self.__root.after(1, lambda: animate_bar(target))
         
         bar_width = 20
         bar_height = 100
         bar = child_frame.create_rectangle(400, 0, 400 + bar_width, bar_height, fill="green")
-        
-        if self.__differenceFreq > 0:
-            animate_bar(self.__differenceFreq * 0.75)
-        else:
-            animate_bar(self.__differenceFreq * 0.75 + 820)
         
         self.__root.mainloop()
         
