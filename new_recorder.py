@@ -1,10 +1,5 @@
 from numpy import log2, floor, ceil, float32, zeros, cos, linspace, fromstring, int16, pi, fft
 from pyaudio import PyAudio, paInt16
-from noisereduce import reduce_noise
-from queue import Queue
-
-global shared_queue
-shared_queue = Queue()
 
 class recorder:
     def __init__(self):
@@ -66,11 +61,7 @@ class recorder:
             if num_frames >= FRAMES_PER_FFT:
                 self.freq =  freq
                 
-                self.difference = freq - note   
-                
-                target = round(self.difference * (-2) + 90)  
-                                         
-                shared_queue.put(target) 
+                self.difference = freq - note    
             
             if self.stop_record:
                 print('stopped')

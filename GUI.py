@@ -1,8 +1,8 @@
 from threading import Thread
-from queue import Empty
+from queue import Queue, Empty
 from tkinter import PhotoImage, Canvas, Tk, NW
 from math import sin, cos, radians
-from new_recorder import recorder, shared_queue
+from new_recorder import recorder
 
 class GUI:
     def __init__(self):
@@ -85,24 +85,24 @@ class GUI:
                                    bg = 'white')
         self.__speedometor_frame.place(x= 225, y= 340)
         
-        # start_color = "#fc00ff" 
-        # end_color = "#00dbde"
+        start_color = "#fc00ff" 
+        end_color = "#00dbde"
         
-        # for i in range(1080):
-        #     r = int(start_color[1:3], 16) + (int(end_color[1:3], 16) - int(start_color[1:3], 16)) * i // 1080
-        #     g = int(start_color[3:5], 16) + (int(end_color[3:5], 16) - int(start_color[3:5], 16)) * i // 1080
-        #     b = int(start_color[5:7], 16) + (int(end_color[5:7], 16) - int(start_color[5:7], 16)) * i // 1080
-        #     color = "#" + hex(r)[2:].zfill(2) + hex(g)[2:].zfill(2) + hex(b)[2:].zfill(2)
+        for i in range(1080):
+            r = int(start_color[1:3], 16) + (int(end_color[1:3], 16) - int(start_color[1:3], 16)) * i // 1080
+            g = int(start_color[3:5], 16) + (int(end_color[3:5], 16) - int(start_color[3:5], 16)) * i // 1080
+            b = int(start_color[5:7], 16) + (int(end_color[5:7], 16) - int(start_color[5:7], 16)) * i // 1080
+            color = "#" + hex(r)[2:].zfill(2) + hex(g)[2:].zfill(2) + hex(b)[2:].zfill(2)
 
-        #     if i < 70:
-        #         self.__frame.create_rectangle(0, i, 1850, i + 1, fill=color, outline="")
-        #         self.__exit_canvas.create_rectangle(0, i, 70, i + 1, fill=color, outline="")
-        #     elif i >= 340:
-        #         self.__frame.create_rectangle(0, i, 225, i + 1, fill=color, outline="")
-        #         self.__frame.create_rectangle(225 + 1470, i, 1920, i + 1, fill=color, outline="")
-        #         self.__speedometor_frame.create_rectangle(0, i - 340, 1470, i - 339, fill=color, outline="")
-        #     else:
-        #         self.__frame.create_rectangle(0, i, 1920, i + 1, fill=color, outline="")    
+            if i < 70:
+                self.__frame.create_rectangle(0, i, 1850, i + 1, fill=color, outline="")
+                self.__exit_canvas.create_rectangle(0, i, 70, i + 1, fill=color, outline="")
+            elif i >= 340:
+                self.__frame.create_rectangle(0, i, 225, i + 1, fill=color, outline="")
+                self.__frame.create_rectangle(225 + 1470, i, 1920, i + 1, fill=color, outline="")
+                self.__speedometor_frame.create_rectangle(0, i - 340, 1470, i - 339, fill=color, outline="")
+            else:
+                self.__frame.create_rectangle(0, i, 1920, i + 1, fill=color, outline="")    
                 
         self.__speedometer_pic = self.__speedometor_frame.create_image(0, 
                                                          0, 
@@ -128,22 +128,25 @@ class GUI:
         
         tune = recorder()
         
-        
+        shared_queue = Queue()
         
         def chooseNote(note):
             def animatee():
-                try:    
-                    target = shared_queue.get(timeout=1)  # Wait for a target value for up to 1 second
-                    if target <= 290 and target >= 0 and self.__angle != target:
-                        if target > 180:
-                            target = 180
-                        print(tune.difference, target)
-                        self.animate_bar_thread(target)
-                except Empty:
-                    pass
+                target = round(tune.difference * (-2) + 90)  
+                                         
+                shared_queue.put(target)
+                    
+                print(tune.freq, target)
+                
+                target = shared_queue.get(timeout=1)  # Wait for a target value for up to 1 second
+                if target <= 290 and target >= 0 and self.__angle != target:
+                    if target > 180:
+                        target = 180
+                    
+                    self.animate_bar_thread(target)
                 
                 if not tune.stop_record:
-                    self.__root.after(300, animatee)
+                    self.__root.after(200, animatee)
                 else:
                     self.animate_bar_thread(90)
 
