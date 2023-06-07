@@ -1,8 +1,8 @@
 from threading import Thread
-
+from queue import Empty
 from tkinter import PhotoImage, Canvas, Tk, NW
 from math import sin, cos, radians
-from Note_detection import note_detection
+from new_recorder import recorder, shared_queue
 
 class GUI:
     def __init__(self):
@@ -18,22 +18,18 @@ class GUI:
         Thread(target= lambda: self.animate_bar(target)).start()
 
     def animate_bar(self, target):
-            if self.__angle == target:
-                return
-            elif self.__angle < target:    
-                self.__angle += 1   
+            if self.__angle != target:    
                 x2 = self.__center_x + cos(radians(self.__angle)) * self.__bar_length
                 y2 = self.__center_y - sin(radians(self.__angle)) * self.__bar_length
                 
                 self.__speedometor_frame.coords(self.__bar, self.__center_x, self.__center_y, x2, y2)
-                self.__root.after(1, lambda: self.animate_bar(target))
-            else:
-                self.__angle -= 1
-                x2 = self.__center_x + cos(radians(self.__angle)) * self.__bar_length
-                y2 = self.__center_y - sin(radians(self.__angle)) * self.__bar_length
-                
-                self.__speedometor_frame.coords(self.__bar, self.__center_x, self.__center_y, x2, y2)
-                self.__root.after(1, lambda: self.animate_bar(target))
+                if self.__angle < target:
+                    self.__angle += 1
+                    self.__root.after(1, lambda: self.animate_bar(target))
+                if self.__angle > target:
+                    self.__angle -= 1
+                    self.__root.after(1, lambda: self.animate_bar(target))
+            return
     
     def create_background_4_normal_mode(self):
         self.__root.title('Normal mode')
@@ -89,26 +85,36 @@ class GUI:
                                    bg = 'white')
         self.__speedometor_frame.place(x= 225, y= 340)
         
-        start_color = "#12c2e9" 
-        end_color = "#c471ed"
+        # start_color = "#fc00ff" 
+        # end_color = "#00dbde"
         
-        for i in range(1080):
-            r = int(start_color[1:3], 16) + (int(end_color[1:3], 16) - int(start_color[1:3], 16)) * i // 1080
-            g = int(start_color[3:5], 16) + (int(end_color[3:5], 16) - int(start_color[3:5], 16)) * i // 1080
-            b = int(start_color[5:7], 16) + (int(end_color[5:7], 16) - int(start_color[5:7], 16)) * i // 1080
-            color = "#" + hex(r)[2:].zfill(2) + hex(g)[2:].zfill(2) + hex(b)[2:].zfill(2)
+        # for i in range(1080):
+        #     r = int(start_color[1:3], 16) + (int(end_color[1:3], 16) - int(start_color[1:3], 16)) * i // 1080
+        #     g = int(start_color[3:5], 16) + (int(end_color[3:5], 16) - int(start_color[3:5], 16)) * i // 1080
+        #     b = int(start_color[5:7], 16) + (int(end_color[5:7], 16) - int(start_color[5:7], 16)) * i // 1080
+        #     color = "#" + hex(r)[2:].zfill(2) + hex(g)[2:].zfill(2) + hex(b)[2:].zfill(2)
 
-            if i < 70:
-                self.__frame.create_rectangle(0, i, 1850, i + 1, fill=color, outline="")
-                self.__exit_canvas.create_rectangle(0, i, 70, i + 1, fill=color, outline="")
-            elif i >= 340:
-                self.__frame.create_rectangle(0, i, 225, i + 1, fill=color, outline="")
-                self.__frame.create_rectangle(225 + 1470, i, 1920, i + 1, fill=color, outline="")
-                self.__speedometor_frame.create_rectangle(0, i - 340, 1470, i - 339, fill=color, outline="")
-            else:
-                self.__frame.create_rectangle(0, i, 1920, i + 1, fill=color, outline="")    
+        #     if i < 70:
+        #         self.__frame.create_rectangle(0, i, 1850, i + 1, fill=color, outline="")
+        #         self.__exit_canvas.create_rectangle(0, i, 70, i + 1, fill=color, outline="")
+        #     elif i >= 340:
+        #         self.__frame.create_rectangle(0, i, 225, i + 1, fill=color, outline="")
+        #         self.__frame.create_rectangle(225 + 1470, i, 1920, i + 1, fill=color, outline="")
+        #         self.__speedometor_frame.create_rectangle(0, i - 340, 1470, i - 339, fill=color, outline="")
+        #     else:
+        #         self.__frame.create_rectangle(0, i, 1920, i + 1, fill=color, outline="")    
+                
+        self.__speedometer_pic = self.__speedometor_frame.create_image(0, 
+                                                         0, 
+                                                         anchor= NW, 
+                                                         image= self.__speedometer)
+     
+     
+    def normal_mode(self):      
         
         def exit_click(event):
+            tune.stop_record = True
+            
             self.__root.destroy()
         
         exit_button = self.__exit_canvas.create_image(0, 
@@ -116,36 +122,43 @@ class GUI:
                                                anchor= NW, 
                                                image= self.__exit_pic) 
         
-        self.__exit_canvas.tag_bind(exit_button, '<Button-1>', exit_click)  
-        
-        self.__speedometer_pic = self.__speedometor_frame.create_image(0, 
-                                                         0, 
-                                                         anchor= NW, 
-                                                         image= self.__speedometer)
-     
-     
-    def normal_mode(self):       
+        self.__exit_canvas.tag_bind(exit_button, '<Button-1>', exit_click)   
                                 
         Note = [82.41, 110, 146.83, 196, 246.94, 329.63]
         
-        tune = note_detection()
+        tune = recorder()
+        
+        
         
         def chooseNote(note):
-            self.__differenceFreq = tune.tunning(note)
+            def animatee():
+                try:    
+                    target = shared_queue.get(timeout=1)  # Wait for a target value for up to 1 second
+                    if target <= 290 and target >= 0 and self.__angle != target:
+                        if target > 180:
+                            target = 180
+                        print(tune.difference, target)
+                        self.animate_bar_thread(target)
+                except Empty:
+                    pass
+                
+                if not tune.stop_record:
+                    self.__root.after(300, animatee)
+                else:
+                    self.animate_bar_thread(90)
+
+                    
             
-            target = round(self.__differenceFreq * (-3) + 90)
+            def run_record():                    
+                tune.record(note)
+                            
+            thread1 = Thread(target=run_record)
+            thread2 = Thread(target=animatee)
             
-            if target > 180: 
-                target = 180
-            if target < 0: 
-                target = 0
+            thread1.start()
+            thread2.start()
+           
             
-            # print(self.__differenceFreq, target)
-            
-            if self.__differenceFreq >= 0:
-                self.animate_bar_thread(target)
-            else:
-                self.animate_bar_thread(target)
                        
         def E2_enter(event):
             if not self.__isClicked:
@@ -191,13 +204,15 @@ class GUI:
                     
         def E2_click(event):
             if not self.__isClicked:
+                tune.stop_record = False
                 self.__isClicked = True
                 chooseNote(Note[0])
-                self.__speedometor_frame.itemconfig(self.__speedometer_pic, image= self.__pic_moused[0])
-                self.__speedometor_frame.image = self.__pic_moused[0]
+                self.__speedometor_frame.itemconfig(self.__speedometer_pic, image= self.__pic_clicked[0])
+                self.__speedometor_frame.image = self.__pic_clicked[0]
 
         def A2_click(event):
             if not self.__isClicked:
+                tune.stop_record = False
                 self.__isClicked = True
                 chooseNote(Note[1])
                 self.__speedometor_frame.itemconfig(self.__speedometer_pic, image= self.__pic_clicked[1])
@@ -205,36 +220,42 @@ class GUI:
 
         def D3_click(event):
             if not self.__isClicked:
-                chooseNote(Note[2])
+                tune.stop_record = False
                 self.__isClicked = True
+                chooseNote(Note[2])
                 self.__speedometor_frame.itemconfig(self.__speedometer_pic, image= self.__pic_clicked[2])
                 self.__speedometor_frame.image = self.__pic_clicked[2]
 
         def G3_click(event):
             if not self.__isClicked:
-                chooseNote(Note[3])
+                tune.stop_record = False
                 self.__isClicked = True
+                chooseNote(Note[3])
                 self.__speedometor_frame.itemconfig(self.__speedometer_pic, image= self.__pic_clicked[3])
                 self.__speedometor_frame.image = self.__pic_clicked[3]
 
         def B3_click(event):
             if not self.__isClicked:
-                chooseNote(Note[4])
+                tune.stop_record = False
                 self.__isClicked = True
+                chooseNote(Note[4])
                 self.__speedometor_frame.itemconfig(self.__speedometer_pic, image= self.__pic_clicked[4])
                 self.__speedometor_frame.image = self.__pic_clicked[4]
 
         def E4_click(event):
             if not self.__isClicked:
-                chooseNote(Note[5])
+                tune.stop_record = False
                 self.__isClicked = True
+                chooseNote(Note[5])
                 self.__speedometor_frame.itemconfig(self.__speedometer_pic, image= self.__pic_clicked[5])
                 self.__speedometor_frame.image = self.__pic_clicked[5]
         
         def Unclick(event):
             if self.__isClicked:
+                tune.stop_record = True
                 self.__isClicked = False
-                self.animate_bar_thread(90)
+                self.__speedometor_frame.itemconfig(self.__speedometer_pic, image= self.__speedometer)
+                self.__speedometor_frame.image = self.__speedometer
         
         rect1 = self.__speedometor_frame.create_rectangle(73, 478, 73+204, 478+240, fill= '', outline= '')
         rect2 = self.__speedometor_frame.create_rectangle(212, 257, 212+242, 257+167, fill= '', outline= '')
