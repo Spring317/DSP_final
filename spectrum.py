@@ -5,10 +5,7 @@ import struct
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-from scipy.fftpack import fft
 from tkinter import TclError
-
-#%matplotlib tk
 
 # constants
 
@@ -16,10 +13,6 @@ CHUNK = 1024 * 2             # samples per frame
 FORMAT = pyaudio.paInt16     # audio format (bytes per sample?)
 CHANNELS = 1                 # single channel for microphone
 RATE = 44100                 # samples per second
-
-# create matplotlib figure and axes
-
-fig, (ax1, ax2) = plt.subplots(2, figsize=(15, 7))
 
 # pyaudio class instance
 
@@ -36,31 +29,42 @@ stream = p.open(
     frames_per_buffer=CHUNK
 )
 
+# create matplotlib figure and axes
+
+fig, (ax1, ax2, ax3) = plt.subplots(3, figsize=(15, 15))
+
 # variable for plotting
 
 x = np.arange(0, 2 * CHUNK, 2)       # samples (waveform)
-xf = np.linspace(0, RATE, CHUNK)     # frequencies (spectrum)
+freq = (1/(0.01*CHUNK)) * np.arange(CHUNK)
 
 # create a line object with random data
 
 line, = ax1.plot(x, np.random.rand(CHUNK), '-', lw=2)
 
-# create semilogx line for spectrum
+# create semilogx line for PSD
 
-line_fft, = ax2.semilogx(xf, np.random.rand(CHUNK), '-', lw=2)
+line_PSD, = ax2.plot(freq, np.random.rand(CHUNK))
 
 # format waveform axes
 
 ax1.set_title('AUDIO WAVEFORM')
-ax1.set_xlabel('samples')
-ax1.set_ylabel('volume')
 ax1.set_ylim(0, 255)
 ax1.set_xlim(0, 2 * CHUNK)
 plt.setp(ax1, xticks=[0, CHUNK, 2 * CHUNK], yticks=[0, 128, 255])
 
-# format spectrum axes
+ax2.set_title('PSD')
+ax2.set_ylim(0, 100000)
 
-ax2.set_xlim(20, RATE / 2)
+threshold = 15000
+
+ax3.set_title('CLEAN WAVEFORM')
+ax3.set_ylim(0, 255)
+ax3.set_xlim(0, 2 * CHUNK)
+ax2.axhline(threshold, ls= '--', c= 'r')
+plt.setp(ax3, xticks=[0, CHUNK, 2 * CHUNK], yticks=[0, 128, 255])
+
+line_clean, = ax3.plot(x, np.random.rand(CHUNK), '-', lw=2)
 
 # show axes
 
@@ -82,14 +86,29 @@ while True:
         data_int = struct.unpack(str(2 * CHUNK) + 'B', data)
     
         data_np = np.array(data_int, dtype='b')[::2] + 128
-    
+
+        ffted = np.fft.fft(data_np)
+        
+        PSD = ffted * np.conj(ffted) / CHUNK
+        
         line.set_ydata(data_np)
-    
-        # compute FFT and update line
-    
-        yf = fft(data_int)
-        line_fft.set_ydata(np.abs(yf[0:CHUNK])  / (128 * CHUNK))
-    
+
+        # PSD
+        line_PSD.set_ydata(PSD)
+
+        ## Filter out noise
+        
+        psd_idxs = PSD > threshold #array of 0 and 1
+
+        # psd_clean = PSD * psd_idxs #zero out all the unnecessary powers
+        ffted_clean = psd_idxs * ffted #used to retrieve the signal
+
+        # line_PSD.set_ydata(psd_clean)
+        
+        signal_filtered = np.fft.ifft(ffted_clean) #inverse fourier transform
+        
+        line_clean.set_ydata(signal_filtered)
+        
         # update figure canvas
     
         try:

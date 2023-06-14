@@ -198,6 +198,8 @@ class GUI:
         self.__isClicked = False
         
         dirs = ['E2', 'A2', 'D3', 'G3', 'B3', 'E4']
+        #      82.41, 110, 146.83, 196, 246.94, 329.63
+        
         moused_dirs = []
         for i in dirs:
             moused_dirs.append('GUI/normal_mode/' + i + '_moused.png')
@@ -268,12 +270,12 @@ class GUI:
                                          
                 shared_queue.put(target)
                 
+                print(self.__tune.freq, target)
+                
                 target = shared_queue.get(timeout=1)  # Wait for a target value for up to 1 second
                 if target <= 290 and target >= 0 and self.__angle != target:
                     if target > 180:
                         target = 180
-                    
-                    print(self.__tune.freq, target)
                     
                     self.animate_bar_thread(target)
                 
